@@ -116,6 +116,8 @@ public class Chat {
 
     private void criarNosRaizes () throws InterruptedException, KeeperException{
         //criar os dois ZNodes (/chat e /usuarios) usando o método criarNoRaiz
+        criarNoRaiz(ZNODE_CHAT);
+        criarNoRaiz(ZNODE_USUARIOS);
 
     }
 
