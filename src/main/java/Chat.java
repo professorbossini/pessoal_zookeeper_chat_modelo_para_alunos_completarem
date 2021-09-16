@@ -56,6 +56,13 @@ public class Chat {
     private boolean usuarioJaExiste (String usuario) throws InterruptedException, KeeperException{
         //seu código aqui
         //ao final, devolva uma expressão booleana
+
+        List <String> usuarios = zooKeeper.getChildren(ZNODE_USUARIOS, false);
+        for (int i = 0; i < usuarios.size(); i++) {
+            if (usuarios.get(i).equals(usuario)){
+                return true;
+            }
+        }
         return false;
     }
 
@@ -124,6 +131,7 @@ public class Chat {
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
+
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
