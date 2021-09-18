@@ -165,6 +165,7 @@ public class Chat {
 
     private void exibirInstrucoes (){
         //um simples println para exibir as instruções
+        System.out.println(instrucoes);
 
     }
 
