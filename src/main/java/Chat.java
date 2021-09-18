@@ -124,6 +124,7 @@ public class Chat {
             if (opcao.startsWith("/list")){
                 //seu código aqui
                 exibirHistorico();
+                exibirInstrucoes();
             }
             //send
             else if (opcao.startsWith("/send")){
@@ -132,7 +133,6 @@ public class Chat {
                 //e cria um ZNode persistente
                 //o nome do ZNode é o número que representa a data
                 //seu conteúdo pode ser algo como usuario:mensagem
-                //String msg = usuario + ":" + opcao.substring(opcao.indexOf("/send") + 1);
                 String msg = usuario + ":" + opcao.replace("/send", "");
                 String node_name = ZNODE_CHAT + "/" + Long.toString(new Date().getTime());
                 zooKeeper.create(node_name, msg.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -155,7 +155,7 @@ public class Chat {
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
-        zooKeeper.addWatch(ZNODE_USUARIOS, AddWatchMode.PERSISTENT_RECURSIVE);
+        zooKeeper.addWatch(ZNODE_USUARIOS, usuarioWatcher, AddWatchMode.PERSISTENT_RECURSIVE);
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
@@ -176,6 +176,33 @@ public class Chat {
                     zooKeeper.getChildren(ZNODE_CHAT, historicoWatcher);
                 }
             } catch (InterruptedException | KeeperException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private  final Watcher usuarioWatcher = new Watcher() {
+        @Override
+        public void process(WatchedEvent event) {
+            try {
+                switch (event.getType()){
+                    case NodeCreated:
+                        List<String> list_usuarios = zooKeeper.getChildren(ZNODE_USUARIOS, false);
+                        System.out.printf("%s entrou.", list_usuarios.get(list_usuarios.size()-1));
+                        break;
+                    case NodeDeleted:
+                        List<String> list_usuarios_deletados = zooKeeper.getChildren(ZNODE_USUARIOS, false);
+                        System.out.printf("%s saiu.", list_usuarios_deletados.get(list_usuarios_deletados.size()-1));
+                        break;
+                }
+            } catch (InterruptedException | KeeperException e) {
+                e.printStackTrace();
+            }
+            try {
+                registrarWatchers();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (KeeperException e) {
                 e.printStackTrace();
             }
         }
