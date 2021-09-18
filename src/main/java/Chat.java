@@ -69,11 +69,12 @@ public class Chat {
     //veja os comentários para implementar esse método
     private void exibirHistorico () throws InterruptedException, KeeperException{
         //obter a lista de mensagens (getChildren)
-        List<String> datas = null; //chame o getChildren aqui
+        List<String> datas = zooKeeper.getChildren(ZNODE_CHAT, false); //chame o getChildren aqui
         //se estiver vazia, mostra a mensagem especificada
         if (datas.isEmpty()) System.out.println ("Não há mensagens.");
         //ordene pela data (você pode usar o sort de Collections que recebe a lista e um Comparator)
         //ordene aqui
+        Collections.sort(datas);
         for (String data : datas){
             //obtém os dados do ZNode da vez (com getData)
             byte [] bytes = zooKeeper.getData(
@@ -84,6 +85,11 @@ public class Chat {
                             false
                     )
             );
+
+            System.out.println(formatDate(Long.parseLong(data)) +
+                    ": " +
+                    usuario + " diz " +
+                    new String(bytes));
             //formatar e exibir no padrão data: Usuário diz Oi, Tudo bem?
             //seu código aqui
             System.out.println("************************");
