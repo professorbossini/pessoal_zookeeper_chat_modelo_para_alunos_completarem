@@ -36,6 +36,7 @@ public class Chat {
 
     //construa o Scanner aqui
     private Chat (){
+
     }
 
     //Mostra uma mensagem para o usuário, dizendo que ele deve escolher seu nome
@@ -47,6 +48,7 @@ public class Chat {
     private void capturaUsuario () throws InterruptedException, KeeperException{
         //seu código aqui
         System.out.println("Favor escolher um nome de usuário");
+        scanner = new Scanner(System.in);
 
         while (true){
             usuario = scanner.nextLine();
@@ -56,6 +58,8 @@ public class Chat {
                 if (usuarioJaExiste(usuario)) {
                     System.out.println("Usuário já logado");
                 } else {
+                    String znode_name = ZNODE_USUARIOS + "/" + usuario;
+                    zooKeeper.create(znode_name, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                     break;
                 }
             }
@@ -122,6 +126,7 @@ public class Chat {
             //list: exibe o histórico de mensagens e as instruções
             if (opcao.startsWith("/list")){
                 //seu código aqui
+                exibirHistorico();
             }
             //send
             else if (opcao.startsWith("/send")){
@@ -130,7 +135,8 @@ public class Chat {
                 //e cria um ZNode persistente
                 //o nome do ZNode é o número que representa a data
                 //seu conteúdo pode ser algo como usuario:mensagem
-                String msg = opcao.substring(opcao.indexOf(" ") + 1);
+                String msg = opcao.substring(opcao.indexOf("/send") + 1);
+
 
             }
             else{
@@ -151,6 +157,7 @@ public class Chat {
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
+        zooKeeper.addWatch(ZNODE_USUARIOS, AddWatchMode.PERSISTENT_RECURSIVE);
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
