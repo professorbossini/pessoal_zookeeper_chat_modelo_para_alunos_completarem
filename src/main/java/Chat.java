@@ -35,7 +35,7 @@ public class Chat {
     private String usuario;
 
     //construa o Scanner aqui
-    private Chat (){
+    private Chat () {
     }
 
     //Mostra uma mensagem para o usuário, dizendo que ele deve escolher seu nome
@@ -46,6 +46,23 @@ public class Chat {
     //deve criar um ZNode efêmero para representar o usuário
     private void capturaUsuario () throws InterruptedException, KeeperException{
         //seu código aqui
+        System.out.println("Favor escolher um nome de usuário");
+        scanner = new Scanner(System.in);
+
+        while (true){
+            usuario = scanner.nextLine();
+            if (usuario.contains("/")) {
+                System.out.println("Favor não usar / em seu nome");
+            } else {
+                if (usuarioJaExiste(usuario)) {
+                    System.out.println("Usuário já logado");
+                } else {
+                    String znode_name = ZNODE_USUARIOS + "/" + usuario;
+                    zooKeeper.create(znode_name, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+                    break;
+                }
+            }
+        }
 
         //no final, esse método pode mostrar essa mensagem
         System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
@@ -56,17 +73,25 @@ public class Chat {
     private boolean usuarioJaExiste (String usuario) throws InterruptedException, KeeperException{
         //seu código aqui
         //ao final, devolva uma expressão booleana
+
+        List <String> usuarios = zooKeeper.getChildren(ZNODE_USUARIOS, false);
+        for (int i = 0; i < usuarios.size(); i++) {
+            if (usuarios.get(i).equals(usuario)){
+                return true;
+            }
+        }
         return false;
     }
 
     //veja os comentários para implementar esse método
     private void exibirHistorico () throws InterruptedException, KeeperException{
         //obter a lista de mensagens (getChildren)
-        List<String> datas = null; //chame o getChildren aqui
+        List<String> datas = zooKeeper.getChildren(ZNODE_CHAT, false); //chame o getChildren aqui
         //se estiver vazia, mostra a mensagem especificada
         if (datas.isEmpty()) System.out.println ("Não há mensagens.");
         //ordene pela data (você pode usar o sort de Collections que recebe a lista e um Comparator)
         //ordene aqui
+        Collections.sort(datas);
         for (String data : datas){
             //obtém os dados do ZNode da vez (com getData)
             byte [] bytes = zooKeeper.getData(
@@ -77,6 +102,9 @@ public class Chat {
                             false
                     )
             );
+
+            System.out.println(formatDate(Long.parseLong(data)) + " " +
+                    new String(bytes).replace(":", " diz: "));
             //formatar e exibir no padrão data: Usuário diz Oi, Tudo bem?
             //seu código aqui
             System.out.println("************************");
@@ -95,6 +123,8 @@ public class Chat {
             //list: exibe o histórico de mensagens e as instruções
             if (opcao.startsWith("/list")){
                 //seu código aqui
+                exibirHistorico();
+                exibirInstrucoes();
             }
             //send
             else if (opcao.startsWith("/send")){
@@ -103,8 +133,9 @@ public class Chat {
                 //e cria um ZNode persistente
                 //o nome do ZNode é o número que representa a data
                 //seu conteúdo pode ser algo como usuario:mensagem
-                String msg = opcao.substring(opcao.indexOf(" ") + 1);
-
+                String msg = usuario + ":" + opcao.replace("/send", "");
+                String node_name = ZNODE_CHAT + "/" + Long.toString(new Date().getTime());
+                zooKeeper.create(node_name, msg.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
             else{
                 System.out.println("Opção inválida.");
@@ -116,12 +147,15 @@ public class Chat {
 
     private void criarNosRaizes () throws InterruptedException, KeeperException{
         //criar os dois ZNodes (/chat e /usuarios) usando o método criarNoRaiz
+        criarNoRaiz(ZNODE_CHAT);
+        criarNoRaiz(ZNODE_USUARIOS);
 
     }
 
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
+        zooKeeper.addWatch(ZNODE_USUARIOS, usuarioWatcher, AddWatchMode.PERSISTENT_RECURSIVE);
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
@@ -147,8 +181,31 @@ public class Chat {
         }
     };
 
+    private  final Watcher usuarioWatcher = new Watcher() {
+        @Override
+        public void process(WatchedEvent event) {
+            try {
+                switch (event.getType()) {
+                    case NodeCreated:
+
+                        System.out.printf("%s entrou.\n", event.getPath().replace(ZNODE_USUARIOS + "/", ""));
+                        break;
+                    case NodeDeleted:
+                        String to_analise = event.getPath().replace(ZNODE_USUARIOS + "/", "");
+                        if (!to_analise.equals(usuario))
+                            System.out.printf("%s saiu.\n", event.getPath().replace(ZNODE_USUARIOS + "/", ""));
+                        break;
+                }
+                registrarWatchers();
+            } catch (InterruptedException | KeeperException e){
+                e.printStackTrace();
+            }
+        }
+    };
+
     private void exibirInstrucoes (){
         //um simples println para exibir as instruções
+        System.out.println(instrucoes);
 
     }
 
