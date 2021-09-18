@@ -185,24 +185,19 @@ public class Chat {
         @Override
         public void process(WatchedEvent event) {
             try {
-                switch (event.getType()){
+                switch (event.getType()) {
                     case NodeCreated:
-                        List<String> list_usuarios = zooKeeper.getChildren(ZNODE_USUARIOS, false);
-                        System.out.printf("%s entrou.", list_usuarios.get(list_usuarios.size()-1));
+
+                        System.out.printf("%s entrou.\n", event.getPath().replace(ZNODE_USUARIOS + "/", ""));
                         break;
                     case NodeDeleted:
-                        List<String> list_usuarios_deletados = zooKeeper.getChildren(ZNODE_USUARIOS, false);
-                        System.out.printf("%s saiu.", list_usuarios_deletados.get(list_usuarios_deletados.size()-1));
+                        String to_analise = event.getPath().replace(ZNODE_USUARIOS + "/", "");
+                        if (!to_analise.equals(usuario))
+                            System.out.printf("%s saiu.\n", event.getPath().replace(ZNODE_USUARIOS + "/", ""));
                         break;
                 }
-            } catch (InterruptedException | KeeperException e) {
-                e.printStackTrace();
-            }
-            try {
                 registrarWatchers();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (KeeperException e) {
+            } catch (InterruptedException | KeeperException e){
                 e.printStackTrace();
             }
         }
