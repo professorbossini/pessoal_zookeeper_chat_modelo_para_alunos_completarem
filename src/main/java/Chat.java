@@ -35,8 +35,7 @@ public class Chat {
     private String usuario;
 
     //construa o Scanner aqui
-    private Chat (){
-
+    private Chat () {
     }
 
     //Mostra uma mensagem para o usuário, dizendo que ele deve escolher seu nome
@@ -104,10 +103,8 @@ public class Chat {
                     )
             );
 
-            System.out.println(formatDate(Long.parseLong(data)) +
-                    ": " +
-                    usuario + " diz " +
-                    new String(bytes));
+            System.out.println(formatDate(Long.parseLong(data)) + " " +
+                    new String(bytes).replace(":", " diz: "));
             //formatar e exibir no padrão data: Usuário diz Oi, Tudo bem?
             //seu código aqui
             System.out.println("************************");
@@ -135,9 +132,10 @@ public class Chat {
                 //e cria um ZNode persistente
                 //o nome do ZNode é o número que representa a data
                 //seu conteúdo pode ser algo como usuario:mensagem
-                String msg = opcao.substring(opcao.indexOf("/send") + 1);
-
-
+                //String msg = usuario + ":" + opcao.substring(opcao.indexOf("/send") + 1);
+                String msg = usuario + ":" + opcao.replace("/send", "");
+                String node_name = ZNODE_CHAT + "/" + Long.toString(new Date().getTime());
+                zooKeeper.create(node_name, msg.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             }
             else{
                 System.out.println("Opção inválida.");
