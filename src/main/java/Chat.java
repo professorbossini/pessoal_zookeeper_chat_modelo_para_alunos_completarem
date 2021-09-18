@@ -46,6 +46,20 @@ public class Chat {
     //deve criar um ZNode efêmero para representar o usuário
     private void capturaUsuario () throws InterruptedException, KeeperException{
         //seu código aqui
+        System.out.println("Favor escolher um nome de usuário");
+
+        while (true){
+            usuario = scanner.nextLine();
+            if (usuario.contains("/")) {
+                System.out.println("Favor não usar / em seu nome");
+            } else {
+                if (usuarioJaExiste(usuario)) {
+                    System.out.println("Usuário já logado");
+                } else {
+                    break;
+                }
+            }
+        }
 
         //no final, esse método pode mostrar essa mensagem
         System.out.printf ("Oi, %s. Você entrou. Veja o que já aconteceu até então.\n", usuario);
@@ -137,7 +151,6 @@ public class Chat {
     private void registrarWatchers() throws InterruptedException, KeeperException{
         //registrar watcher persistente e recursivo no ZNode /usuarios
         //use o método addWatch
-
 
         //registrar um one-time trigger watch no ZNode /chat
         //use getChildren.
